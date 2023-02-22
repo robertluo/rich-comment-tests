@@ -168,7 +168,7 @@
              -do-report# clojure.test/do-report
              dr# (fn [m#] (-do-report# (assoc m# :line ~line :file ~fname)))]
          (with-redefs [clojure.test/do-report dr#]
-           (m/assert ~expectation-form form-result#))))))
+           (m/assert form-result# ~expectation-form))))))
 
 (defn- ex-dispatch
   [expectation-form]
