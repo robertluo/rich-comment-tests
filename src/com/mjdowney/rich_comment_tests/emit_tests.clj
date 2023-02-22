@@ -138,23 +138,13 @@
         test-form (list '= test-sexpr expectation-form)]
     `(let [form-result# ~(try-bind-repl-vars test-sexpr line-number *file*)
            test-result# (= form-result# '~expectation-form)]
-
-       (if test-result#
-         ; n.b. this needs to be fully qualified for babashka
-         (clojure.test/do-report
-           {:type :pass,
-            :message ~message
-            :expected '~test-form
-            :actual '~test-form
-            :line ~line-number
-            :file ~fname})
-         (clojure.test/do-report
-           {:type     :fail,
-            :message  ~message
-            :expected '~test-form
-            :actual   (list '~'not (list '~'= form-result# '~expectation-form))
-            :line     ~line-number
-            :file     ~fname})))))
+       (clojure.test/do-report
+        {:type (if test-result# :pass :fail),
+         :message ~message
+         :expected '~test-form
+         :actual (if test-result# '~test-form (list '~'not (list '~'= form-result# '~expectation-form)))
+         :line ~line-number
+         :file ~fname}))))
 
 (defn ?enclose [enclosing-form sexpr]
   (if enclosing-form
@@ -176,3 +166,19 @@
              dr# (fn [m#] (-do-report# (assoc m# :line ~line :file ~fname)))]
          (with-redefs [clojure.test/do-report dr#]
            (m/assert ~expectation-form form-result#))))))
+
+(defmethod emit-assertion '=throws=>
+  [{:keys [context-strings test-sexpr location]} expectation-form]
+  (let [message (last context-strings)
+        line-number (first location)
+        fname (-*file*)
+        test-form (list '= test-sexpr expectation-form)]
+    `(let [form-result# ~(try-bind-repl-vars test-sexpr line-number *file*)
+           test-result# (thrown? '~expectation-form form-result#)]
+       (clojure.test/do-report
+        {:type (if test-result# :pass :fail),
+         :message ~message
+         :expected '~test-form
+         :actual form-result#
+         :line ~line-number
+         :file ~fname}))))
