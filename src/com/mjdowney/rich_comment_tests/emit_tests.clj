@@ -170,17 +170,39 @@
          (with-redefs [clojure.test/do-report dr#]
            (m/assert ~expectation-form form-result#))))))
 
+(defn- ex-dispatch
+  [expectation-form]
+  (let [ex-value (eval expectation-form)]
+    (cond
+      (instance? Class ex-value) 
+      [expectation-form `(constantly true)]
+
+      (instance? java.util.regex.Pattern ex-value)
+      ['Exception `(fn [e#] (re-matches ~ex-value (.getMessage e#)))]
+
+      (map? ex-value) 
+      ['clojure.lang.ExceptionInfo `(fn [e#] (m/assert (ex-data e#) ~expectation-form))]
+
+      :else (throw (ex-info "Unsupported expectation" {:form expectation-form})))))
+
 (defmethod emit-assertion 'throws=>
   [{:keys [context-strings test-sexpr location]} expectation-form]
   (let [message (last context-strings)
         line-number (first location)
-        fname (-*file*)]
+        fname (-*file*)
+        [ex-class ex-matcher] (ex-dispatch expectation-form)]
     `(try
        ~test-sexpr 
        (clojure.test/do-report {:type :fail, :message ~message, :expected ~expectation-form, :file ~fname, :line ~line-number})
-       (catch ~expectation-form e#
-         (clojure.test/do-report {:type :pass, :message ~message, :expected ~expectation-form, :actual e#, :file ~fname, :line ~line-number})))))
+       (catch ~ex-class e#
+         (clojure.test/do-report 
+           {:type (if (~ex-matcher e#) :pass :fail), 
+            :message ~message,
+            :expected ~expectation-form,
+            :actual e#,
+            :file ~fname, :line ~line-number})))))
 
 (comment
-  (emit-assertion {:expectation-type 'throws=> :test-sexpr '(throw (Exception. "")) :location [20]} 'Exception)
+  (emit-assertion {:expectation-type 'throws=> :test-sexpr '(throw (Exception. "")) :location [20]} 'Exception) 
+  (emit-assertion {:expectation-type 'throws=> :test-sexpr '(throw (Exception. "")) :location [20]} '{})
   )
