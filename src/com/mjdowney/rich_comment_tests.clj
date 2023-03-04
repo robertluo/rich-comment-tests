@@ -186,7 +186,7 @@
   {:pre [(string? file) (instance? Namespace ns)]}
   (binding [*ns* ns
             *file* file]
-    (let [resolver (fn [alias] (or (get {:current *ns*} alias) alias))]
+    (let [resolver (assoc (ns-aliases *ns*) :current *ns*)]
       (run-tests* (z/of-file *file* {:track-position? true :auto-resolve resolver})))))
 
 (defn require-file-for-ns
@@ -324,8 +324,9 @@
   {:status 200
    :body "ok"}
   
-  ;;auto resolve current ns keyword
-  ::ok ;=> ::ok
+  ;;current ns alias can be resolved on both sides
+  :com.mjdowney.rich-comment-tests/ok ;=> ::ok
+  ::z/opts ;=> :rewrite-clj.zip/opts
   )
 
 (comment ;; For example...
