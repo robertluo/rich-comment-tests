@@ -16,17 +16,17 @@
   ;; For example, let's add two numbers.
   ;; We can see that the result should be '2'.
   (+ 1 1) ;=> 2
-
+  
   ; `foo` and inc are equivalent
   (let [foo inc]
     (= (foo 1) (inc 1))) ;=> true
-
+  
   ;; Allows space between comment and arrow
   (+ 1 1)
   ;; => 2
-
+  
   ; This comment isn't attached to anything
-
+  
   ; Test results can be multi-line
   (map inc
        [1 2 3])
@@ -34,29 +34,26 @@
   ;;     3
   ;;     4)
   ;; More comments can follow
-
+  
   ; This form is run, but it's not an assertion bc there is no => or =>>
   (apply assoc {} (repeatedly 2 rand))
   ; {0.10999946790750348 0.4352718677404722}
-
+  
   ; Use use '=>>' for pattern matching with https://github.com/HealthSamurai/matcho
   (let [this-file (slurp *file*)]
     {:contents this-file
      :characters (count this-file)})
   ;=>> {:contents string?
   ;     :characters int?}
-
+  
   ; '=>>' also allows ellipses before ), }, or ] to indicate more elements
   (range 10) ;;=>> [0 1 2 ...]
   (range 10) ;;=>> '(0 1 2 ...)
   (apply assoc {} (range 20)) ;=>> {0 1, 2 3 ...}
-
-  ; 'throws=>' tests exceptions
-  (throw (Exception. "none")) ;throws=> Exception
-  ; 'throws=>' can match a message
-  (throw (Exception. "none")) ;throws=> #"none"
-  ; if throws an ex-info, its ex-data can be matched using a matcho pattern
-  (throw (ex-info "none" {:number 3})) ;throws=> {:number odd?}
+  
+  ; 'throws=>>' tests exceptions
+  (throw (Exception. "none")) ;throws=>> #:error{:class #(isa? % Throwable) :message #"no.."}
+  (throw (ex-info "ok" {:a 1})) ;throws=>> #:error{:data {:a 1}}
   )
 
 ;;; End example code
@@ -159,6 +156,7 @@
           (fn [data]
             (let [tf (tests/emit-test-form data)]
               (try
+                (tap> tf)
                 (eval tf)
                 (catch Exception e
                   (throw
