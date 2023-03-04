@@ -54,6 +54,8 @@
   ; 'throws=>>' tests exceptions
   (throw (Exception. "none")) ;throws=>> #:error{:class #(isa? % Throwable) :message #"no.."}
   (throw (ex-info "ok" {:a 1})) ;throws=>> #:error{:data {:a 1}}
+  ; example in README
+  (throw (ex-info "ok" {:number 3})) ;throws=>> #:error{:message #".." :data {:number odd?}}
   )
 
 ;;; End example code
