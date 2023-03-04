@@ -158,15 +158,14 @@
           (fn [data]
             (let [tf (tests/emit-test-form data)]
               (try
-                (tap> tf)
                 (eval tf)
                 (catch Exception e
                   (throw
-                    (ex-info
-                      (str "Got " (type e) " evaluating form:\n"
-                           (with-out-str (pprint/pprint (:test-sexpr data))))
-                      {::eval-error true}
-                      e))))))
+                   (ex-info
+                    (str "Got " (type e) " evaluating form:\n"
+                         (with-out-str (pprint/pprint (:test-sexpr data))))
+                    {::eval-error true}
+                    e))))))
           (rct-data-seq rct-zloc))
 
         ; Copy clojure.test behavior in case of uncaught exception
