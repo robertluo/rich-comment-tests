@@ -1,7 +1,7 @@
 {:paths   ["src"]
- :deps    {org.clojure/clojure         {:mvn/version "1.11.1"}
-           org.clojure/tools.namespace {:mvn/version "1.4.4"}
-           rewrite-clj/rewrite-clj     {:mvn/version "1.1.47"}
+ :deps    {org.clojure/clojure         {:mvn/version "1.12.0"}
+           org.clojure/tools.namespace {:mvn/version "1.5.0"}
+           rewrite-clj/rewrite-clj     {:mvn/version "1.1.49"}
            healthsamurai/matcho        {:mvn/version "0.3.10"}}
  :aliases {:test  {:extra-paths ["test"]
                    :extra-deps  {io.github.cognitect-labs/test-runner {:git/tag "v0.5.1" :git/sha "dfb30dd"}}

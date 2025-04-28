@@ -76,7 +76,13 @@
 ; By default, just try to read-string it, if present
 (defmethod read-expectation-form :default
   [data]
-  (default-read-expectation data))
+  (let [v (default-read-expectation data)]
+    (try
+      ;;TODO Nasty workaround to force evaluate symbols
+      ;;e.g. (= (read-string "'a") a), but (= (eval (read-string "'a")) a) is true
+      (eval v)
+      (catch Exception _
+        v))))
 
 (defn elide-ellipses-in-expectation-string
   "Allow writing \"...\" before end brackets / parens in maps, vectors, and

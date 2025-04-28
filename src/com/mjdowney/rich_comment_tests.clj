@@ -326,6 +326,9 @@
   ;;current ns alias can be resolved on both sides
   :com.mjdowney.rich-comment-tests/ok ;=> ::ok
   ::z/opts ;=> :rewrite-clj.zip/opts
+  
+  '{a/a 2} ;=> 
+  '{a/a 2}
   )
 
 (comment ;; For example...
