@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip-ci]')"
+    runs-on: ubuntu-latest
+    environment: deploy
+
+    steps:
+
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - uses: DeLaGuardo/setup-clojure@13.2
+      with:
+        cli: '1.12.0.1530'
+
+    - uses: actions/cache@v4
+      with:
+        path: ~/.m2
+        key: default-build
+
+    - run: clojure -T:build ci
+
+    - uses: codecov/codecov-action@v5
+
+    - name: clojars
+      if: github.event.release
+      run: clojure -T:build deploy
+      env:
+        CLOJARS_USERNAME: ${{secrets.CLOJARS_USERNAME}}
+        CLOJARS_PASSWORD: ${{secrets.CLOJARS_PASSWORD}}

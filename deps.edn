@@ -8,5 +8,6 @@
                    :main-opts   ["--report" "stderr"
                                  "-m" "cognitect.test-runner"]
                    :exec-fn     cognitect.test-runner.api/test}
-           :test1 {:exec-fn   com.mjdowney.rich-comment-tests.test-runner/run-tests-in-file-tree!
-                   :exec-args {:dirs #{"src"}}}}}
+           :build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.8"}
+                          io.github.seancorfield/build-clj {:git/tag "v0.9.2", :git/sha "9c9f078"}}
+                   :ns-default build}}}

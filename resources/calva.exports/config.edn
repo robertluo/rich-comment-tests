@@ -1,4 +1,4 @@
-{:customREPLcommandSnippets
+{:customREPLCommandSnippets
  [{:name "Run Rich Comment Tests in Current Namespace",
    :key "t",
    :snippet "(clojure.core/requiring-resolve 'com.mjdowney.rich-comment-tests/run-ns-tests!)
