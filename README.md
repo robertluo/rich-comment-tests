@@ -1,5 +1,6 @@
-[![clojure CI](https://github.com/matthewdowney/rich-comment-tests/actions/workflows/clojure.yml/badge.svg)](https://github.com/matthewdowney/rich-comment-tests/actions/workflows/clojure.yml)
-[![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://babashka.org)
+[![CI](https://github.com/robertluo/rich-comment-tests/actions/workflows/main.yml/badge.svg)](https://github.com/robertluo/rich-comment-tests/actions/workflows/main.yml)
+[![Clojars](https://img.shields.io/clojars/v/io.github.robertluo/rich-comment-tests.svg)](https://clojars.org/io.github.robertluo/rich-comment-tests)
+[![bb compatible](https://raw.githubusercontent.com/babashka/babashka/master/logo/badge.svg)](https://book.babashka.org#badges)
 
 # Rich Comment Tests (RCT)
 

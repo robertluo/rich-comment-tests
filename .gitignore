@@ -5,3 +5,4 @@
 .nrepl-*
 .lsp/
 target/
+.vscode/

@@ -7,7 +7,7 @@
   "apply project default to `opts`"
   [opts]
   (let [version (format "1.1.%s" (b/git-count-revs nil))
-        defaults {:lib     'io.github.robertluo/rich-comment-test
+        defaults {:lib     'io.github.robertluo/rich-comment-tests
                   :version version}]
     (merge defaults opts)))
 
