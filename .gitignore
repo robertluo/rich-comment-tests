@@ -4,3 +4,5 @@
 .cpcache/
 .nrepl-*
 .lsp/
+target/
+.vscode/

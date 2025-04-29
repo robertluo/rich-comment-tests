@@ -231,21 +231,6 @@
        (do ~@body)
        (string/trim (.toString sw#)))))
 
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
-(defmacro with-printlns
-  "Rebind `println` during the execution of body to print as normal, PLUS
-  save each line of output, and return a vector of printed lines."
-  [& body]
-  `(let [println# clojure.core/println
-         printed# (atom [])]
-     (with-redefs [println (fn [& args#]
-                             (apply println# args#)
-                             (binding [*print-readably* nil]
-                               (swap! printed# conj (apply pr-str args#)))
-                             nil)]
-       ~@body
-       @printed#)))
-
 ^:rct/test
 (comment
   ;; Tests for things which should fail
@@ -326,6 +311,9 @@
   ;;current ns alias can be resolved on both sides
   :com.mjdowney.rich-comment-tests/ok ;=> ::ok
   ::z/opts ;=> :rewrite-clj.zip/opts
+  
+  '{a/a 2} ;=> 
+  '{a/a 2}
   )
 
 (comment ;; For example...
