@@ -22,19 +22,6 @@
          (when-some [nxt (f x)]
            (iterate1 f nxt)))))
 
-(defn test-sexpr-zlocs
-  "All sexpr-able nodes inside a rct form."
-  [rct-zloc]
-  (->>
-   (iterate1
-    z/right
-    (-> rct-zloc
-        z/down
-        z/right
-        z/down
-        z/right))
-   (filter z/sexpr-able?)))
-
 (defn pairs
   "Transducer from [a b c ... z] => [[a b] [b c] ... [z nil]]."
   []
@@ -72,6 +59,36 @@
 
   (defn expectation-str [fst-line]
     (-> (re-matches ptn-expectation fst-line) second)))
+
+(defn- follows-empty-result-comment?
+  "True if `zloc` directly follows (through whitespace) an empty result comment
+  like `;=>` or `;=>>`. Such nodes are separate-line expectations, not test
+  expressions."
+  [zloc]
+  (loop [z (z/left* zloc)]
+    (cond
+      (nil? z) false
+      (z/whitespace? z) (recur (z/left* z))
+      :else (let [s (z/string z)]
+              (and (= (z/tag z) :comment)
+                   (result-comment? s)
+                   (let [exp (expectation-str
+                              (string/replace-first s #"^\s*;+\s?" ""))]
+                     (or (nil? exp) (empty? (string/trim exp)))))))))
+
+(defn test-sexpr-zlocs
+  "All sexpr-able nodes inside a rct form."
+  [rct-zloc]
+  (->>
+   (iterate1
+    z/right
+    (-> rct-zloc
+        z/down
+        z/right
+        z/down
+        z/right))
+   (filter z/sexpr-able?)
+   (remove follows-empty-result-comment?)))
 
 ^:rct/test
 (comment

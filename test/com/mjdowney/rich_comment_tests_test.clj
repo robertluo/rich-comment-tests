@@ -1,6 +1,6 @@
 (ns com.mjdowney.rich-comment-tests-test
   (:require [clojure.string :as string]
-            [clojure.test :refer [deftest]]
+            [clojure.test :refer [deftest is]]
             [com.mjdowney.rich-comment-tests :as rct]
             [com.mjdowney.rich-comment-tests.test-runner :as test-runner]
             [matcho.core :as m]
@@ -80,3 +80,42 @@
         (println x)         nil
         (dissoc x :a)       {:b 2}}
       strs)))
+
+(defn test-sexprs
+  "Extract just the test sexprs from a comment body string."
+  [comment-body]
+  (let [form (str "^:rct/test\n(comment\n" comment-body "\n)")]
+    (->> (z/of-string form {:track-position? true})
+         rct/rct-zlocs
+         (mapcat rct/rct-data-seq)
+         (mapv :test-sexpr))))
+
+(deftest multiline-expectation-not-treated-as-test-sexpr
+  ;; When ;=> appears on its own line, the following form is the expected value,
+  ;; NOT a test expression. Verifies the follows-empty-result-comment? filter.
+  (let [sexprs (test-sexprs
+                "(update {} :a inc)
+                  ;=>
+                  {:a 1}
+
+                  (+ 1 1) ;=> 2")]
+    (is (= ['(update {} :a inc) '(+ 1 1)] sexprs)
+        "Multi-line expectation value should not appear as a test sexpr")))
+
+(defn rctstr
+  "Run an RCT string through the test pipeline and capture output."
+  [s]
+  (rct/capture-clojure-test-out
+   (rct/run-tests*
+    (z/of-string
+     (str "^:rct/test\n (comment\n" s "\n)")
+     {:track-position? true}))))
+
+(deftest reader-conditional-in-expectation
+  ;; read-string with {:read-cond :allow} should handle reader conditionals
+  ;; in expectation strings (the ;=> side)
+  (let [result (rctstr "(+ 1 0) ;=> #?(:clj 1 :cljs 2)")]
+    (is (not (string/includes? result "FAIL"))
+        "Reader conditional in expectation should pass")
+    (is (not (string/includes? result "ERROR"))
+        "Reader conditional in expectation should not error")))

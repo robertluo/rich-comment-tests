@@ -68,7 +68,7 @@
   [{:keys [expectation-string] :as data}]
   (if expectation-string
     (try
-      (read-string expectation-string)
+      (read-string {:read-cond :allow} expectation-string)
       (catch Exception _
         (throw-bad-expectation-string data)))
     :none))
