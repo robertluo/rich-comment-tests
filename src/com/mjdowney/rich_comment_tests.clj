@@ -199,12 +199,25 @@
                                           vals
                                           (keep (comp :file meta))
                                           first)]
-      (let [nsf (io/file ns-file-from-metadata)]
+      ;; Yet another hack: Sometimes the path taken from meta is not a full path.
+      ;; If so, process it as a resource and resolve the full path that way.
+      (let [full-path (if (string/starts-with? ns-file-from-metadata (System/getProperty "user.home"))
+                        ns-file-from-metadata
+                        (io/resource ns-file-from-metadata))
+            nsf (io/file full-path)]
         (when (.isFile nsf)
           (.getPath nsf))))
     (throw
       (ex-info (str "Failed to resolve source file for ns " ns)
                {:ns ns}))))
+
+^:rct/test
+(comment
+ (require-file-for-ns *ns*) ;=> string?
+ (require-file-for-ns 'com.mjdowney.rich-comment-tests) ;=> string?
+ (require 'com.mjdowney.rich-comment-tests.impl)
+ (require-file-for-ns 'com.mjdowney.rich-comment-tests.impl) ;=> string?
+ #_:rct/test)
 
 (defn run-ns-tests!
   "Take a namespace or namespace symbol, attempt to find the corresponding
