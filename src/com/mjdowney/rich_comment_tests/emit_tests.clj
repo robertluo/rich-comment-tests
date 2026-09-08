@@ -73,6 +73,44 @@
         (throw-bad-expectation-string data)))
     :none))
 
+(defn callable-head?
+  "True when x invokes rather than throwing, in head position of a seq.
+  A seq is a nested call, so its value invokes rather than the seq itself."
+  [x]
+  (or (ifn? x) (seq? x)))
+
+^:rct/test
+(comment
+  (callable-head? :a)              ;=> true
+  (callable-head? '(constantly 1)) ;=> true
+  (callable-head? 1)               ;=> false
+  )
+
+(defn quote-data-seqs
+  "Quote every seq in `x` that cannot be a call, so it compares as data.
+  Recursion stops at a call, whose arguments evaluate. It stops at a record
+  too, which is already a value."
+  [x]
+  (cond
+    (seq? x) (if (callable-head? (first x)) x (list 'quote x))
+    (record? x) x
+    (map? x) (into {} (map (fn [[k v]] [(quote-data-seqs k) (quote-data-seqs v)])) x)
+    (vector? x) (mapv quote-data-seqs x)
+    (set? x) (into #{} (map quote-data-seqs) x)
+    :else x))
+
+^:rct/test
+(comment
+  (defrecord R [a])
+
+  (eval (quote-data-seqs '(inc 1)))             ;=> 2
+  (eval (quote-data-seqs '(1)))                 ;=> '(1)
+  (record? (quote-data-seqs (->R '(1))))        ;=> true
+  (eval (quote-data-seqs '{:a (1) :b (inc 1)})) ;=> '{:a (1) :b 2}
+  (eval (quote-data-seqs '[(1) (inc 1)]))       ;=> '[(1) 2]
+  (eval (quote-data-seqs '#{(1)}))              ;=> '#{(1)}
+  )
+
 ; By default, just try to read-string it, if present
 (defmethod read-expectation-form :default
   [data]
@@ -81,6 +119,14 @@
       ;;TODO Nasty workaround to force evaluate symbols
       ;;e.g. (= (read-string "'a") a), but (= (eval (read-string "'a")) a) is true
       (eval v)
+      (catch Exception _
+        v))))
+
+(defmethod read-expectation-form '=>
+  [data]
+  (let [v (default-read-expectation data)]
+    (try
+      (eval (quote-data-seqs v))
       (catch Exception _
         v))))
 

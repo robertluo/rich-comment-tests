@@ -119,3 +119,27 @@
         "Reader conditional in expectation should pass")
     (is (not (string/includes? result "ERROR"))
         "Reader conditional in expectation should not error")))
+
+(defn passes? [s]
+  (not (re-find #"FAIL|ERROR" (rctstr s))))
+
+(deftest a-callable-head-evaluates-as-a-call
+  (is (passes? "(def m {:a 1})
+                1 ;=> (:a m)"))
+  (is (passes? "(quote a) ;=> 'a")))
+
+(deftest a-seq-that-cannot-be-a-call-compares-as-data
+  (is (passes? "(list 1) ;=> (1)"))
+  (is (passes? "(list :a) ;=> (:a)")))
+
+(deftest each-element-evaluates-on-its-own
+  (is (passes? "{:a (list 1) :b 2} ;=> {:a (1) :b (inc 1)}")))
+
+(deftest a-disagreeing-expectation-fails
+  (is (not (passes? "(def m {:a 1})
+                     2 ;=> (:a m)")))
+  (is (not (passes? "(list 1) ;=> (2)"))))
+
+(deftest other-arrows-bypass-the-walk
+  (is (passes? "{:a 1 :b 2} ;=>> {:a 1}"))
+  (is (passes? "(throw (ex-info \"ok\" {:a 1})) ;throws=>> #:error{:data {:a 1}}")))
