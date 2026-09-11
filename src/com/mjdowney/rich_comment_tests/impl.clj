@@ -93,7 +93,7 @@
 ^:rct/test
 (comment
   (result-comment? "  ;;  throws=> 3\n") ;=> true
-  (result-comment-type ";;   =>\n") ;=> =>
+  (result-comment-type ";;   =>\n") ;=> '=>
   (expectation-str "=>>:ok") ;=> ":ok"
   )
 

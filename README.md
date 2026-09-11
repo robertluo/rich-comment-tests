@@ -36,7 +36,7 @@ io.github.robertluo/rich-comment-tests #:git{:sha "22ea82d321b99f659f18c5b882285
 RCT is a version of the excellent [hyperfiddle/rcf](https://github.com/hyperfiddle/rcf)
 that uses [rewrite-clj](https://github.com/clj-commons/rewrite-clj)
 to evaluate `comment` blocks and match the result of each sexpr against
-`;=> result` comments.
+its `;=>` comment.
 
 It was inspired by the discussion in [hyperfiddle/rcf/issues/49](https://github.com/hyperfiddle/rcf/issues/49).
 Further discussion / feature requests welcome.
@@ -63,11 +63,18 @@ writing small tests alongside the function under test.
 ## Assertions
 
 RCT supports three kinds of assertions:
-- `=>` asserts literal equality
-- `=>>` asserts a [matcho](https://github.com/HealthSamurai/matcho) pattern 
-  (and allows [... to indicate a partial pattern](https://github.com/matthewdowney/rich-comment-tests/issues/1))
-- `throws=>>` asserts an exception expected, the thrown exception (Throwable) will turns into a error record, like `{:error/class Exception, :error/message "this is an error", :error/cause #{another...} :error/data {:some 'data}}`, an example:
- `(throw (ex-info "ok" {:number 3})) ;throws=>> #:error{:message #".." :data {:number odd?}}`
+
+| arrow | expectation | comparison | example |
+| --- | --- | --- | --- |
+| `=>` | code | equality | `(range 3) ;=> [0 1 2]` |
+| `=>>` | code | [matcho](https://github.com/HealthSamurai/matcho) pattern, with [`...` for a partial pattern](https://github.com/matthewdowney/rich-comment-tests/issues/1) | `(range 3) ;=>> '(0 1 ...)` |
+| `throws=>>` | code | matcho pattern against the error record | `(throw (ex-info "ok" {:a 1})) ;throws=>> #:error{:data {:a 1}}` |
+
+Every arrow evaluates the expectation. Quote a seq or a symbol to compare it as
+data.
+
+`throws=>>` turns the thrown Throwable into that record, like
+`{:error/class Exception, :error/message "this is an error", :error/cause #{another...} :error/data {:some 'data}}`.
 
 Assertions are either part of the comment or follow it directly.
 
@@ -79,8 +86,8 @@ RCT treats a symbol directly followed by `=>` or `=>>` as an assertion operator.
 
 ^:rct/test
 (comment
-  ;; Literal assertions with =>
-  (range 3) ;=> (0 1 2)
+  ;; Equality assertions with =>
+  (range 3) ;=> [0 1 2]
   (+ 5 5) ;; => 10
   (System/getProperty "java.version.date") ;=> "2022-09-20"
 
@@ -169,6 +176,7 @@ This fork
 - Exchange the order of `=>` form to match the `(is (= .. ..))` concept.
 - Fix a bug that namespaced keywords can not be correctly resolved.
 - Fix the standalone test runner, it will have an exit code of 1 if some tests do not succeed.
+- **Breaking**: a `;=>` expectation evaluates as code, like `;=>>` already does. Write `;=> [0 1 2]`, or `;=> '(0 1 2)`, to compare a seq as data. The expectation evaluates after the form it describes. `(def m {:a 1}) ;=> #'m` now works. A throw or a compile error reports at its own line. The assertions after it still run. [#11](https://github.com/robertluo/rich-comment-tests/issues/11)
 
 v1.0.2 (2023-02-09)
 - Update for Babashka test/*report-counters* is a ref instead of an atom for bb >= 1.1.171 [#18](https://github.com/matthewdowney/rich-comment-tests/issues/18)

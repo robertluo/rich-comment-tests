@@ -30,9 +30,9 @@
   ; Test results can be multi-line
   (map inc
        [1 2 3])
-  ;; => (2
+  ;; => [2
   ;;     3
-  ;;     4)
+  ;;     4]
   ;; More comments can follow
   
   ; This form is run, but it's not an assertion bc there is no => or =>>
@@ -54,8 +54,9 @@
   ; 'throws=>>' tests exceptions
   (throw (Exception. "none")) ;throws=>> #:error{:class #(isa? % Throwable) :message #"no.."}
   (throw (ex-info "ok" {:a 1})) ;throws=>> #:error{:data {:a 1}}
-  ; example in README
-  (throw (ex-info "ok" {:number 3})) ;throws=>> #:error{:message #".." :data {:number odd?}}
+  (throw (ex-info "ok" {:number 3}))
+  ;throws=>>
+  #:error{:message #".." :data {:number odd?}}
   )
 
 ;;; End example code
@@ -123,7 +124,7 @@
        (drop 5)
        first
        :expectation-type)
-  ;=> =>>
+  ;=> '=>>
   )
 
 (defn clojure-test-reporting-active? [] (some? test/*report-counters*))
@@ -139,6 +140,13 @@
          (test/do-report {:type :end-test-ns   :ns *ns*})
          (test/do-report (assoc @test/*report-counters* :type :summary))
          ret#))))
+
+(defn- assertion-string
+  "Render a test-sexpr and its expectation comment back to source."
+  [{:keys [test-sexpr expectation-type expectation-string]}]
+  (str (string/trim-newline (with-out-str (pprint/pprint test-sexpr)))
+       (when expectation-type
+         (str "\n;" expectation-type " " expectation-string))))
 
 (defn run-tests*
   "Take a `rewrite-clj` zipper pointed at the root of a file and run all rich
@@ -159,24 +167,24 @@
             (let [tf (tests/emit-test-form data)]
               (try
                 (eval tf)
-                (catch Exception e
-                  (throw
-                   (ex-info
-                    (str "Got " (type e) " evaluating form:\n"
-                         (with-out-str (pprint/pprint (:test-sexpr data))))
-                    {::eval-error true}
-                    e))))))
+                (catch Throwable e
+                  (test/do-report
+                    {:type :error
+                     :message (str "Got " (type e) " evaluating:\n"
+                                   (assertion-string data) "\n")
+                     :expected nil
+                     :actual e
+                     :line (first (:location data))
+                     :file (tests/-*file*)})))))
           (rct-data-seq rct-zloc))
 
         ; Copy clojure.test behavior in case of uncaught exception
         (catch Throwable e
           (test/do-report
             {:type :error
-             :message (if (::eval-error (ex-data e))
-                        (ex-message e)
-                        "Uncaught exception, not in assertion.")
+             :message "Uncaught exception, not in assertion."
              :expected nil
-             :actual (if (::eval-error (ex-data e)) (ex-cause e) e)}))))
+             :actual e}))))
     @test/*report-counters*))
 
 (defn run-file-tests!
@@ -281,8 +289,8 @@
 ;; Demo some kinds of test assertions
 ^:rct/test
 (comment
-  ;; Literal assertions with =>
-  (range 3) ;=> (0 1 2)
+  ;; Equality assertions with =>
+  (range 3) ;=> [0 1 2]
   (+ 5 5) ;; => 10
   ; (System/getProperty "java.version.date") ;=> "2022-09-20"
   
