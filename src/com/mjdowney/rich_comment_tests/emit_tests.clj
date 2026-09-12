@@ -7,8 +7,6 @@
             [rewrite-clj.zip :as z]))
 
 (defn throw-evaluation-error [test-form line-number file cause]
-  (test/with-test-out
-    (println "ERROR at " (str file ":" line-number) "-" (type cause)))
   (throw
     (ex-info
       (format
@@ -76,13 +74,7 @@
 ; By default, just try to read-string it, if present
 (defmethod read-expectation-form :default
   [data]
-  (let [v (default-read-expectation data)]
-    (try
-      ;;TODO Nasty workaround to force evaluate symbols
-      ;;e.g. (= (read-string "'a") a), but (= (eval (read-string "'a")) a) is true
-      (eval v)
-      (catch Exception _
-        v))))
+  (default-read-expectation data))
 
 (defn elide-ellipses-in-expectation-string
   "Allow writing \"...\" before end brackets / parens in maps, vectors, and
@@ -147,14 +139,21 @@
         fname (-*file*)
         test-form (list '= expectation-form test-sexpr)]
     `(let [form-result# ~(try-bind-repl-vars test-sexpr line-number *file*)
-           test-result# (= '~expectation-form form-result#)]
-       (clojure.test/do-report
-        {:type (if test-result# :pass :fail),
-         :message ~message
-         :expected '~test-form
-         :actual (if test-result# '~test-form (list '~'not (list '~'= '~expectation-form form-result#)))
-         :line ~line-number
-         :file ~fname}))))
+           report# (fn [type# actual#]
+                     (clojure.test/do-report
+                      {:type type#
+                       :message ~message
+                       :expected '~test-form
+                       :actual actual#
+                       :line ~line-number
+                       :file ~fname}))]
+       (try
+         (let [expected# ~expectation-form]
+           (if (= expected# form-result#)
+             (report# :pass '~test-form)
+             (report# :fail (list '~'not (list '~'= expected# form-result#)))))
+         (catch Throwable e#
+           (report# :error e#))))))
 
 (defn ?enclose [enclosing-form sexpr]
   (if enclosing-form

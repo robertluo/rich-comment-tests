@@ -7,8 +7,8 @@
 
 (deftest rct-tests
   (testing "simple assertions"
-    (t/passes? "(range 3) ;=> (0 1 2)")
-    (t/fails? "(range 3) ;=> (0 2 2)" "actual: (not (= (0 2 2) (0 1 2)))")
+    (t/passes? "(range 3) ;=> '(0 1 2)")
+    (t/fails? "(range 3) ;=> '(0 2 2)" "actual: (not (= (0 2 2) (0 1 2)))")
 
     (t/passes?
       "(+ 5 5)
@@ -43,8 +43,8 @@
 
 ^:rct/test
 (comment
-  ;; Literal assertions with =>
-  (range 3) ;=> (0 1 2)
+  ;; Equality assertions with =>
+  (range 3) ;=> [0 1 2]
   (+ 5 5) ;; => 10
 
   ;; Pattern matching assertions with =>>

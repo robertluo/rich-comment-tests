@@ -114,8 +114,43 @@
 (deftest reader-conditional-in-expectation
   ;; read-string with {:read-cond :allow} should handle reader conditionals
   ;; in expectation strings (the ;=> side)
-  (let [result (rctstr "(+ 1 0) ;=> #?(:clj 1 :cljs 2)")]
-    (is (not (string/includes? result "FAIL"))
-        "Reader conditional in expectation should pass")
-    (is (not (string/includes? result "ERROR"))
-        "Reader conditional in expectation should not error")))
+  (is (= "" (rctstr "(+ 1 0) ;=> #?(:clj 1 :cljs 2)"))
+      "Reader conditional in expectation should pass")
+  (is (string/includes? (rctstr "(+ 1 0) ;=> #?(:clj 2 :cljs 1)")
+                        "(not (= 2 1))")
+      "the :clj branch is read and compared, not skipped"))
+
+(deftest expectation-evaluates-after-the-test-sexpr
+  (is (= "" (rctstr "(def m1 {:a 1}) ;=> #'m1"))
+      "a var the test-sexpr defines resolves in the expectation")
+  (is (string/includes? (rctstr "(def m1 {:a 1}) ;=> :not-the-var")
+                        "expected: (= :not-the-var (def m1 {:a 1}))")
+      "the expectation is compared, not skipped"))
+
+(deftest a-throwing-expectation-errors-with-its-own-form
+  ;; the second shape throws an Error, not an Exception
+  (doseq [[assertion expected] {"(range 3) ;=> (0 1 2)" "expected: (= (0 1 2) (range 3))"
+                                "1 ;=> (assert false)" "expected: (= (assert false) 1)"}]
+    (let [result (rctstr (str assertion "\n(+ 1 1) ;=> 3"))]
+      (is (string/includes? result expected)
+          (str assertion " names the expectation"))
+      (is (string/includes? result "(not (= 3 2))")
+          (str assertion " does not end the block")))))
+
+(deftest an-uncompilable-expectation-errors-at-its-own-line
+  ;; rctstr prepends two lines, so the first assertion sits on line 3
+  (doseq [expectation ["(no-such-fn 1 2)" "nope-not-a-var" "(inc 1 2 3)"]]
+    (let [result (rctstr (str "1 ;=> " expectation "\n(+ 1 1) ;=> 3"))]
+      (is (string/includes? result ":3)")
+          (str expectation " reports the line it sits on"))
+      (is (string/includes? result (str ";=> " expectation))
+          (str expectation " names the expectation, not the test-sexpr"))
+      (is (string/includes? result "(not (= 3 2))")
+          (str expectation " does not end the block")))))
+
+(deftest a-throwing-test-sexpr-errors-without-ending-the-block
+  (let [result (rctstr "(/ 1 0) ;=> 1\n(+ 1 1) ;=> 3")]
+    (is (string/includes? result "(/ 1 0)\n;=> 1")
+        "the error names the form that threw")
+    (is (string/includes? result "(not (= 3 2))")
+        "the assertions following it still run")))
