@@ -221,10 +221,10 @@
 
 ^:rct/test
 (comment
- (require-file-for-ns *ns*) ;=> string?
- (require-file-for-ns 'com.mjdowney.rich-comment-tests) ;=> string?
+ (require-file-for-ns *ns*) ;=>> string?
+ (require-file-for-ns 'com.mjdowney.rich-comment-tests) ;=>> string?
  (require 'com.mjdowney.rich-comment-tests.impl)
- (require-file-for-ns 'com.mjdowney.rich-comment-tests.impl) ;=> string?
+ (require-file-for-ns 'com.mjdowney.rich-comment-tests.impl) ;=>> string?
  #_:rct/test)
 
 (defn run-ns-tests!
